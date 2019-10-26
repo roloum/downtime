@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/roloum/downtime/notifier"
 )
 
 var wg sync.WaitGroup
@@ -16,15 +18,28 @@ func main() {
 	uris := os.Args[1:]
 
 	errors := checkDownTime(uris)
-	if len(errors) > 0 && os.Getenv("TWILIO") != "" {
-		sep := "\n\t- "
-		err := sendMessage(fmt.Sprintf(
-			"The following domains returned errors:%v%v\n", sep,
-			strings.Join(errors, sep)))
 
+	if len(errors) == 0 {
+		return
+	}
+
+	sep := "\n\t- "
+	body := fmt.Sprintf("The following domains returned errors:%v%v", sep,
+		strings.Join(errors, sep))
+
+	types := []string{}
+	//types = append(types, notifier.Screen)
+
+	if os.Getenv("TWILIO") != "" {
+		types = append(types, notifier.Twilio)
+	}
+
+	for _, ntype := range types {
+		n, err := notifier.Factory(ntype)
 		if err != nil {
-			panic(err)
+			fmt.Printf("Unsupported notifier type: %v", ntype)
 		}
+		n.Notify(body)
 	}
 
 }
