@@ -10,13 +10,12 @@ import (
 	"strings"
 )
 
-const sid string = "TWILIO_SID"
-const token string = "TWILIO_AUTH_TOKEN"
-const from string = "TWILIO_FROM"
-const to string = "TWILIO_TO"
+const sid string = "DOWNTIME_TWILIO_SID"
+const token string = "DOWNTIME_TWILIO_AUTH_TOKEN"
+const from string = "DOWNTIME_TWILIO_FROM"
+const to string = "DOWNTIME_TWILIO_TO"
 
-type twilio struct {
-}
+type twilio struct{}
 
 func canSendSMS() bool {
 	if os.Getenv(sid) == "" || os.Getenv(token) == "" || os.Getenv(from) == "" ||

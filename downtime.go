@@ -9,13 +9,19 @@ import (
 	"sync"
 
 	"github.com/roloum/downtime/notifier"
+	"github.com/roloum/downtime/reader"
 )
 
 var wg sync.WaitGroup
 
 func main() {
 
-	uris := os.Args[1:]
+	uris, err := reader.Factory(os.Args[1]).GetDomains()
+	if err != nil {
+		//// TODO: Print error on screen for now, but it should log or email
+		fmt.Printf("Error reading domains: %v\n", err)
+		return
+	}
 
 	errors := checkDownTime(uris)
 
@@ -27,10 +33,17 @@ func main() {
 	body := fmt.Sprintf("The following domains returned errors:%v%v", sep,
 		strings.Join(errors, sep))
 
-	types := []string{}
-	//types = append(types, notifier.Screen)
+	notify(body)
+}
 
-	if os.Getenv("TWILIO") != "" {
+func notify(body string) {
+
+	types := []string{}
+
+	if os.Getenv("DOWNTIME_SCREEN") != "" {
+		types = append(types, notifier.Screen)
+	}
+	if os.Getenv("DOWNTIME_TWILIO") != "" {
 		types = append(types, notifier.Twilio)
 	}
 
@@ -39,7 +52,11 @@ func main() {
 		if err != nil {
 			fmt.Printf("Unsupported notifier type: %v", ntype)
 		}
-		n.Notify(body)
+
+		//// TODO: Print error on screen for now, but it should log or email
+		if err = n.Notify(body); err != nil {
+			fmt.Println(err)
+		}
 	}
 
 }
