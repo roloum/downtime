@@ -16,11 +16,12 @@ var wg sync.WaitGroup
 
 func main() {
 
-	uris, err := reader.Factory(os.Args[1]).GetDomains()
+	rtype := os.Args[1]
+	uris, err := reader.Factory(rtype).GetDomains()
 	if err != nil {
 		//// TODO: Print error on screen for now, but it should log or email
-		fmt.Printf("Error reading domains: %v\n", err)
-		return
+		fmt.Printf("Error reading domains via %s: %v\n", rtype, err)
+		os.Exit(1)
 	}
 
 	errors := checkDownTime(uris)
@@ -51,6 +52,7 @@ func notify(body string) {
 		n, err := notifier.Factory(ntype)
 		if err != nil {
 			fmt.Printf("Unsupported notifier type: %v", ntype)
+			continue
 		}
 
 		//// TODO: Print error on screen for now, but it should log or email
@@ -88,14 +90,15 @@ func checkurl(uri string, ch chan string) {
 
 	var msg string
 
-	if !strings.HasPrefix(uri, "http") {
+	if !(strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://")) {
 		uri = "http://" + uri
 	}
 
-	if _, error := url.ParseRequestURI(uri); error != nil {
+	if u, error := url.ParseRequestURI(uri); error != nil ||
+		!strings.Contains(u.Host, ".") {
 		msg = fmt.Sprintf("Invalid URL: %v", uri)
 	} else if resp, error := http.Get(uri); error != nil {
-		msg = fmt.Sprintf("Could not check URL: %v. %v.", uri, resp)
+		msg = fmt.Sprintf("Could not check URL: %v. %v.", uri, error)
 	} else if resp.StatusCode != http.StatusOK {
 		msg = fmt.Sprintf("Error from %v. Code: %v. Message: %v", uri, resp.StatusCode,
 			resp.Status)

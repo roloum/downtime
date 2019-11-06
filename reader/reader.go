@@ -1,19 +1,23 @@
 package reader
 
+import (
+	"strings"
+)
+
 //Reader ...
 type Reader interface {
 	GetDomains() ([]string, error)
 }
 
 //Inline ...
-const Inline string = "Inline"
+const Inline string = "inline"
 
 //S3 ...
-const S3 string = "S3"
+const S3 string = "s3"
 
 //Factory ...
 func Factory(rtype string) Reader {
-	if rtype == S3 {
+	if strings.ToLower(rtype) == S3 {
 		return &s3{}
 	}
 	return &inline{}
