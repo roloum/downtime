@@ -1,8 +1,9 @@
 package reader
 
 import (
-	"os"
 	"bufio"
+	"os"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -32,7 +33,7 @@ func (r *s3Bucket) GetDomains() ([]string, error) {
 			Bucket: aws.String(os.Getenv("DOWNTIME_S3_BUCKET")),
 			Key:    aws.String(os.Getenv("DOWNTIME_S3_KEY"))})
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	if numBytes == 0 {

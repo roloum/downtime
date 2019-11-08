@@ -17,8 +17,11 @@ const S3 string = "s3"
 
 //Factory ...
 func Factory(rtype string) Reader {
-	if strings.ToLower(rtype) == S3 {
+
+	switch strings.ToLower(rtype) {
+	case S3:
 		return &s3Bucket{}
+	default:
+		return &inline{}
 	}
-	return &inline{}
 }

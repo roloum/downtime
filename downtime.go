@@ -16,7 +16,7 @@ var wg sync.WaitGroup
 
 func main() {
 
-	rtype := os.Args[1]
+	rtype := os.Getenv("DOWNTIME_INPUT")
 	uris, err := reader.Factory(rtype).GetDomains()
 	if err != nil {
 		//// TODO: Print error on screen for now, but it should log or email
