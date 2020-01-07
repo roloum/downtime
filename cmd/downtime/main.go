@@ -43,14 +43,19 @@ func run() error {
 
 	log := log.New(os.Stdout, "Downtime: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile)
 
-	log.Println("main: Loading configuration from AWS Parameter Store")
-	ps, err := dconf.NewPs(appName)
-	if err != nil {
-		return errors.Wrap(err, "loading parameters from AWS Parameter Store")
-	}
-	log.Println("main: Configuration loaded")
+	sources := []conf.Sourcer{}
 
-	if err := conf.Parse(os.Args[1:], appName, &cfg, ps); err != nil {
+	if os.Getenv("DOWNTIME_AWSPS") != "" {
+		log.Println("main: Loading configuration from AWS Parameter Store")
+		ps, err := dconf.NewPs(appName)
+		if err != nil {
+			return errors.Wrap(err, "loading parameters from AWS Parameter Store")
+		}
+
+		sources = append(sources, ps)
+	}
+
+	if err := conf.Parse(os.Args[1:], appName, &cfg, sources...); err != nil {
 		if err == conf.ErrHelpWanted {
 			usage, err := conf.Usage(appName, &cfg)
 			if err != nil {
@@ -61,6 +66,8 @@ func run() error {
 		}
 		return errors.Wrap(err, "parsing config")
 	}
+
+	log.Println("main: Configuration loaded")
 
 	out, err := conf.String(&cfg)
 	if err != nil {
