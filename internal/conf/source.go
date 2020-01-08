@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/pkg/errors"
 )
 
 //This package implements a Sourcer for the ArdanLabs conf package
@@ -28,7 +29,7 @@ func NewPs(namespace string) (*Awsps, error) {
 	//Validate region
 	awsRegion := os.Getenv("AWS_REGION")
 	if awsRegion == "" {
-		return &Awsps{}, fmt.Errorf("AWS Region is not defined")
+		return &Awsps{}, errors.New("AWS Region is not defined")
 	}
 
 	//Create AWS session
@@ -48,7 +49,7 @@ func NewPs(namespace string) (*Awsps, error) {
 		Recursive:      &recursive,
 		WithDecryption: &decryption})
 	if err != nil {
-		return &Awsps{}, fmt.Errorf("Error: %v", err)
+		return &Awsps{}, err
 	}
 
 	//Store parameters in struct's map
