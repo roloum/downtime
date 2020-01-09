@@ -7,6 +7,7 @@ import (
 
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
+	"github.com/roloum/downtime/cmd/downtime/internal/reader"
 	dconf "github.com/roloum/downtime/internal/conf"
 )
 
@@ -36,9 +37,11 @@ func run() error {
 			To    string `conf:"default:+14154079869"`
 		}
 		S3 struct {
-			Bucket string `conf:"default:bucket"`
-			Key    string `conf:"default:key"`
+			AwsRegion string `conf:"default:region"`
+			Bucket    string `conf:"default:bucket"`
+			Key       string `conf:"default:key"`
 		}
+		Domain bool `conf:"default:true"`
 	}
 
 	log := log.New(os.Stdout, "Downtime: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile)
@@ -47,7 +50,7 @@ func run() error {
 
 	if os.Getenv("DOWNTIME_AWSPS") != "" {
 		log.Println("main: Loading configuration from AWS Parameter Store")
-		ps, err := dconf.NewPs(appName)
+		ps, err := dconf.NewPs(os.Getenv("AWS_REGION"), appName)
 		if err != nil {
 			return errors.Wrap(err, "loading parameters from AWS Parameter Store")
 		}
@@ -74,6 +77,22 @@ func run() error {
 		return errors.Wrap(err, "Generating config for output")
 	}
 	log.Printf("main : Config : \n%v\n", out)
+
+	//Read domains, using corresponding input based on configuration
+	var input reader.Reader
+	if cfg.Input == reader.S3 {
+		input = &reader.InputS3Bucket{AwsRegion: cfg.S3.AwsRegion,
+			Bucket: cfg.S3.Bucket, Key: cfg.S3.Key}
+	} else {
+		input = &reader.InputInline{}
+	}
+	i := &reader.Input{}
+	domains, err := i.Read(input)
+	if err != nil {
+		return errors.Wrap(err, "Reading domain list")
+	}
+
+	fmt.Println(domains)
 
 	return nil
 }

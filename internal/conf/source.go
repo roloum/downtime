@@ -2,7 +2,6 @@ package conf
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/ardanlabs/conf"
@@ -24,10 +23,9 @@ type Awsps struct {
 //Session and loads all the parameters for the given namespace in the map
 //@namespace makes this package generic, if we ever want to be able to
 //Use this configuration class for any other project
-func NewPs(namespace string) (*Awsps, error) {
+func NewPs(awsRegion, namespace string) (*Awsps, error) {
 
 	//Validate region
-	awsRegion := os.Getenv("AWS_REGION")
 	if awsRegion == "" {
 		return &Awsps{}, errors.New("AWS Region is not defined")
 	}
