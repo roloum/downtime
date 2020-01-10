@@ -4,14 +4,18 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
 	"github.com/roloum/downtime/cmd/downtime/internal/reader"
 	dconf "github.com/roloum/downtime/internal/conf"
+	"github.com/roloum/downtime/internal/url"
 )
 
 var appName = "downtime"
+
+var wg sync.WaitGroup
 
 func main() {
 	if err := run(); err != nil {
@@ -87,12 +91,44 @@ func run() error {
 		input = &reader.InputInline{}
 	}
 	i := &reader.Input{}
-	domains, err := i.Read(input)
+	uris, err := i.Read(input)
 	if err != nil {
 		return errors.Wrap(err, "Reading domain list")
 	}
 
-	fmt.Println(domains)
+	errors := checkDownTime(uris, cfg.Domain)
+
+	fmt.Println(errors)
 
 	return nil
+}
+
+func checkDownTime(uris []string, domain bool) (errors []error) {
+
+	count := len(uris)
+	var ch = make(chan error, count)
+
+	wg.Add(count)
+
+	for _, uri := range uris {
+		go checkurl(uri, domain, ch)
+	}
+
+	wg.Wait()
+	close(ch)
+
+	for error := range ch {
+		errors = append(errors, error)
+	}
+
+	return
+}
+
+func checkurl(uri string, domain bool, ch chan error) {
+
+	defer wg.Done()
+
+	if err := url.Check(uri, domain); err != nil {
+		ch <- errors.Wrap(err, uri)
+	}
 }
