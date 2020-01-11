@@ -1,6 +1,7 @@
 package reader
 
 import (
+	"log"
 	"os"
 )
 
@@ -8,6 +9,7 @@ import (
 type InputInline struct{}
 
 //GetDomains reads parameters from command line
-func (r *InputInline) GetDomains() ([]string, error) {
+func (r *InputInline) GetDomains(log *log.Logger) ([]string, error) {
+	log.Println("Reading domains from command line")
 	return os.Args[1:], nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
+	"github.com/roloum/downtime/cmd/downtime/internal/notifier"
 	"github.com/roloum/downtime/cmd/downtime/internal/reader"
 	dconf "github.com/roloum/downtime/internal/conf"
 	"github.com/roloum/downtime/internal/url"
@@ -84,26 +85,46 @@ func run() error {
 
 	//Read domains, using corresponding input based on configuration
 	var input reader.Reader
+	//Read from S3 bucket
 	if cfg.Input == reader.S3 {
 		input = &reader.InputS3Bucket{AwsRegion: cfg.S3.AwsRegion,
 			Bucket: cfg.S3.Bucket, Key: cfg.S3.Key}
+		//Read from command line
 	} else {
 		input = &reader.InputInline{}
 	}
 	i := &reader.Input{}
-	uris, err := i.Read(input)
+	uris, err := i.Read(input, log)
 	if err != nil {
 		return errors.Wrap(err, "Reading domain list")
 	}
 
-	errors := checkDownTime(uris, cfg.Domain)
+	errs := checkDownTime(uris, cfg.Domain)
+	//No errors, return and finish
+	if len(errs) == 0 {
+		return nil
+	}
 
-	fmt.Println(errors)
+	//Create message body
+	body := "Errors checking domains:\n"
+	for err := range errs {
+		body += fmt.Sprintf("%v\n", err)
+	}
+
+	//Deliver notification
+	var notifiers = []notifier.Notifier{}
+	if cfg.Output.Screen {
+		notifiers = append(notifiers, &notifier.Screen{})
+	}
+
+	for _, n := range notifiers {
+		n.Notify(body, log)
+	}
 
 	return nil
 }
 
-func checkDownTime(uris []string, domain bool) (errors []error) {
+func checkDownTime(uris []string, domain bool) chan error {
 
 	count := len(uris)
 	var ch = make(chan error, count)
@@ -117,11 +138,7 @@ func checkDownTime(uris []string, domain bool) (errors []error) {
 	wg.Wait()
 	close(ch)
 
-	for error := range ch {
-		errors = append(errors, error)
-	}
-
-	return
+	return ch
 }
 
 func checkurl(uri string, domain bool, ch chan error) {
