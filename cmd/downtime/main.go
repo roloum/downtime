@@ -77,11 +77,13 @@ func run() error {
 
 	log.Println("main: Configuration loaded")
 
-	out, err := conf.String(&cfg)
-	if err != nil {
-		return errors.Wrap(err, "Generating config for output")
-	}
-	log.Printf("main : Config : \n%v\n", out)
+	/*
+		out, err := conf.String(&cfg)
+		if err != nil {
+			return errors.Wrap(err, "Generating config for output")
+		}
+		log.Printf("main : Config : \n%v\n", out)
+	*/
 
 	//Read domains, using corresponding input based on configuration
 	var input reader.Reader
@@ -116,9 +118,15 @@ func run() error {
 	if cfg.Output.Screen {
 		notifiers = append(notifiers, &notifier.Screen{})
 	}
+	if cfg.Output.Twilio {
+		notifiers = append(notifiers, &notifier.Twilio{Sid: cfg.Twilio.Sid,
+			Token: cfg.Twilio.Token, From: cfg.Twilio.From, To: cfg.Twilio.To})
+	}
 
 	for _, n := range notifiers {
-		n.Notify(body, log)
+		if err := n.Notify(body, log); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -5,10 +5,10 @@ import (
 	"log"
 )
 
-//Screen ...
+//Screen struct will implement the Notifier interface
 type Screen struct{}
 
-//Notify ...
+//Notify sends output to screen
 func (s *Screen) Notify(body string, log *log.Logger) error {
 	log.Println("Delivering output to Screen")
 	fmt.Printf("%v\n", body)
