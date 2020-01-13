@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/ardanlabs/conf"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/pkg/errors"
 	"github.com/roloum/downtime/cmd/downtime/internal/notifier"
 	"github.com/roloum/downtime/cmd/downtime/internal/reader"
@@ -19,7 +20,7 @@ var appName = "downtime"
 var wg sync.WaitGroup
 
 func main() {
-	fmt.Println(Handler())
+	lambda.Start(Handler)
 }
 
 //Handler for Lambda function
