@@ -42,7 +42,7 @@ func (t *Twilio) Notify(body string, log *log.Logger) error {
 
 	client := &http.Client{}
 
-	log.Println("Creating POST request")
+	log.Printf("Creating POST request to %v\n", uri)
 	req, err := http.NewRequest("POST", uri, &dataReader)
 	if err != nil {
 		return err
@@ -59,6 +59,7 @@ func (t *Twilio) Notify(body string, log *log.Logger) error {
 		return err
 	}
 
+	log.Println("Checking HTTP status code")
 	if resp.StatusCode != http.StatusCreated {
 		return errors.New(resp.Status)
 	}
