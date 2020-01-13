@@ -1,0 +1,40 @@
+#Serverless Configuration
+
+
+service: downtime
+frameworkVersion: '>=1.28.0 <2.0.0'
+
+provider:
+  name: aws
+  runtime: go1.x
+  region: ${env:AWS_REGION}
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "ssm:DescribeParameters"
+        - "ssm:GetParametersByPath"
+        - "ssm:GetParameter"
+      Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "s3:Get*"
+        - "s3:List*"
+      Resource: "*"
+
+  environment:
+    DOWNTIME_AWSPS: ${env:DOWNTIME_AWSPS}
+
+functions:
+  downtime:
+    handler: downtime
+#    events:
+#      - schedule: rate(3 minutes)
+
+
+#loading parameters from AWS Parameter Store:
+#  AccessDeniedException:
+#    User: arn:aws:sts::234736142278:assumed-role/downtime-dev-us-west-2-lambdaRole/downtime-dev-downtime
+#    is not authorized to perform: ssm:GetParametersByPath
+#    on resource: arn:aws:ssm:us-west-2:234736142278:parameter/downtime/
+#	status code: 400, request id: d92c5a58-f4d8-4d41-94d4-5fd47c4783f6: withStack
