@@ -19,32 +19,30 @@ var appName = "downtime"
 var wg sync.WaitGroup
 
 func main() {
-	if err := run(); err != nil {
-		log.Println("Error: ", err)
-		os.Exit(1)
-	}
+	fmt.Println(Handler())
 }
 
-func run() error {
+//Handler for Lambda function
+func Handler() error {
 
 	//Load configuration
 	var cfg struct {
-		Input  string `conf:"default:inline"`
+		Input  string `type:"string" conf:"default:inline"`
 		Output struct {
-			Screen bool `conf:"default:true"`
-			Twilio bool `conf:"default:false"`
-			Email  bool `conf:"default:false"`
+			Screen bool `type:"bool" conf:"default:true"`
+			Twilio bool `type:"bool" conf:"default:false"`
+			Email  bool `type:"bool" conf:"default:false"`
 		}
 		Twilio struct {
-			Sid   string `conf:"default:ID,noprint"`
-			Token string `conf:"default:TOKEN,noprint"`
-			From  string `conf:"default:+12247013610"`
-			To    string `conf:"default:+14154079869"`
+			From  string `type:"string"`
+			To    string `type:"string"`
+			Sid   string `type:"string" conf:",noprint"`
+			Token string `type:"string" conf:",noprint"`
 		}
 		S3 struct {
-			AwsRegion string `conf:"default:region"`
-			Bucket    string `conf:"default:bucket"`
-			Key       string `conf:"default:key"`
+			AwsRegion string `type:"string" conf:"default:us-west-2"`
+			Bucket    string `type:"string" conf:",noprint"`
+			Key       string `type:"string" conf:",noprint"`
 		}
 		Domain bool `conf:"default:true"`
 	}
@@ -55,7 +53,7 @@ func run() error {
 
 	if os.Getenv("DOWNTIME_AWSPS") != "" {
 		log.Println("main: Loading configuration from AWS Parameter Store")
-		ps, err := dconf.NewPs(os.Getenv("AWS_REGION"), appName)
+		ps, err := dconf.NewPs(os.Getenv("AWS_REGION"), appName, log)
 		if err != nil {
 			return errors.Wrap(err, "loading parameters from AWS Parameter Store")
 		}
@@ -77,13 +75,11 @@ func run() error {
 
 	log.Println("main: Configuration loaded")
 
-	/*
-		out, err := conf.String(&cfg)
-		if err != nil {
-			return errors.Wrap(err, "Generating config for output")
-		}
-		log.Printf("main : Config : \n%v\n", out)
-	*/
+	out, err := conf.String(&cfg)
+	if err != nil {
+		return errors.Wrap(err, "Generating config for output")
+	}
+	log.Printf("main : Config : \n%v\n", out)
 
 	//Read domains, using corresponding input based on configuration
 	var input reader.Reader
