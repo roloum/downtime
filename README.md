@@ -13,4 +13,5 @@ The application can read the list of domains from AWS S3 or from command line. T
 The appplication notifies through text message via Twilio API and it can also send the output to screen. Notification via email can be implemented as well.
 
 Cross compile
+
 GOARCH=amd64 GOOS=linux go build
